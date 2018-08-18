@@ -2,6 +2,20 @@ import tensorflow as tf
 import numpy as np
 from sklearn.datasets import fetch_california_housing
 from sklearn.preprocessing import StandardScaler
+from tensorflow.python.ops import variables
+from tensorflow.python.framework import dtypes
+
+
+def run_session(initializer, label, op, epochs, theta_val):
+    with tf.Session() as sess:
+        sess.run(initializer)
+        print("############- ", label, " -#########")
+        for epoch in range(epochs):
+            if epoch % 100 == 0:
+                print("Epoch", epoch, "MSE =", mse.eval())
+            sess.run(op)
+        best_theta = theta_val.eval()
+        print("best theta\n", best_theta)
 
 
 scaler = StandardScaler()
@@ -26,74 +40,38 @@ error = y_pred - y
 mse = tf.reduce_mean(tf.square(error), name='mse')
 
 gradients = tf.gradients(mse, [theta])[0]
-gradient_descent_optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-momentum_optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
 
-gradient_descent_training_op = gradient_descent_optimizer.minimize(mse)
-momentum_training_op = momentum_optimizer.minimize(mse)
+# optimizers from https://www.tensorflow.org/api_guides/python/train#optimizers
+# see also https://www.tensorflow.org/api_docs/python/tf/contrib/opt
+gradient_descent_training_op = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(mse)
+adelta_training_op = tf.train.AdadeltaOptimizer(learning_rate=learning_rate).minimize(mse)
+adagrad_training_op = tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(mse)
+
+global_step = variables.Variable(0, dtype=dtypes.int64)
+adagradDA_training_op = tf.train.AdagradDAOptimizer(learning_rate=learning_rate,
+                                                    global_step=global_step,
+                                                    initial_gradient_squared_accumulator_value=0.1,
+                                                    l1_regularization_strength=0.0,
+                                                    l2_regularization_strength=0.0).minimize(mse)
+
+momentum_training_op = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(mse)
+adam_training_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(mse)
+ftrl_training_op = tf.train.FtrlOptimizer(learning_rate=learning_rate).minimize(mse)
+proximal_gradient_descent_training_op = \
+    tf.train.ProximalGradientDescentOptimizer(learning_rate=learning_rate).minimize(mse)
+proximal_adagrad_training_op = tf.train.ProximalAdagradOptimizer(learning_rate=learning_rate).minimize(mse)
+rmsprop_training_op = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(mse)
 
 init = tf.global_variables_initializer()
 
-with tf.Session() as gradient_descent_sess:
-    gradient_descent_sess.run(init)
-    print("gradient descent optimizer")
-    for epoch in range(n_epochs):
-        if epoch % 100 == 0:
-            print("Epoch", epoch, "MSE =", mse.eval())
-        gradient_descent_sess.run(gradient_descent_training_op)
-    best_theta = theta.eval()
-    print("best theta\n", best_theta)
-
-with tf.Session() as momentum_sess:
-    momentum_sess.run(init)
-    print("momentum optimizer")
-    for epoch in range(n_epochs):
-        if epoch % 100 == 0:
-            print("Epoch", epoch, "MSE =", mse.eval())
-        momentum_sess.run(momentum_training_op)
-    best_theta = theta.eval()
-    print("best theta\n", best_theta)
-
-# gradient descent optimizer
-# Epoch 0 MSE = 8.25434
-# Epoch 100 MSE = 0.948461
-# Epoch 200 MSE = 0.748185
-# Epoch 300 MSE = 0.68909
-# Epoch 400 MSE = 0.647255
-# Epoch 500 MSE = 0.616427
-# Epoch 600 MSE = 0.59362
-# Epoch 700 MSE = 0.576691
-# Epoch 800 MSE = 0.564082
-# Epoch 900 MSE = 0.554657
-# best theta
-#  [[ 2.06855249]
-#  [ 0.87705243]
-#  [ 0.17237075]
-#  [-0.27149037]
-#  [ 0.27383834]
-#  [ 0.01438697]
-#  [-0.04487337]
-#  [-0.46447456]
-#  [-0.43660375]]
-# momentum optimizer
-# Epoch 0 MSE = 15.1179
-# Epoch 100 MSE = 0.530413
-# Epoch 200 MSE = 0.524698
-# Epoch 300 MSE = 0.524364
-# Epoch 400 MSE = 0.524326
-# Epoch 500 MSE = 0.524322
-# Epoch 600 MSE = 0.524321
-# Epoch 700 MSE = 0.524321
-# Epoch 800 MSE = 0.524321
-# Epoch 900 MSE = 0.524321
-# best theta
-#  [[ 2.06855798]
-#  [ 0.82962567]
-#  [ 0.11875275]
-#  [-0.26553884]
-#  [ 0.30570623]
-#  [-0.00450266]
-#  [-0.0393265 ]
-#  [-0.89987195]
-#  [-0.87052804]]
+run_session(init, "gradient descent optimizer", gradient_descent_training_op, n_epochs, theta)
+run_session(init, "adelta optimizer", adelta_training_op, n_epochs, theta)
+run_session(init, "adagrad optimizer", adagrad_training_op, n_epochs, theta)
+run_session(init, "adagrad dual averaging optimizer", adagradDA_training_op, n_epochs, theta)
+run_session(init, "momentum optimizer", momentum_training_op, n_epochs, theta)
+run_session(init, "adam optimizer", adam_training_op, n_epochs, theta)
+run_session(init, "FTRL algorithm optimizer", ftrl_training_op, n_epochs, theta)
+run_session(init, "proximal gradient descent optimizer", proximal_gradient_descent_training_op, n_epochs, theta)
+run_session(init, "proximal adagrad optimizer", proximal_adagrad_training_op, n_epochs, theta)
+run_session(init, "RMSProp algorithm optimizer", rmsprop_training_op, n_epochs, theta)
 
