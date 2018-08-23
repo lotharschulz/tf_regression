@@ -74,5 +74,5 @@ ops.append(("RMSProp algorithm optimizer",
 
 init = tf.global_variables_initializer()
 
-for t in ops:
-    run_session(init, t[0], t[1], n_epochs, theta)
+for o in ops:
+    run_session(init, o[0], o[1], n_epochs, theta)
