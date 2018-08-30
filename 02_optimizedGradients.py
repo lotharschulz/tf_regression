@@ -39,8 +39,6 @@ y_pred = tf.matmul(X, theta, name='predictions')
 error = y_pred - y
 mse = tf.reduce_mean(tf.square(error), name='mse')
 
-gradients = tf.gradients(mse, [theta])[0]
-
 ops = list()
 
 # optimizers: https://www.tensorflow.org/api_guides/python/train#optimizers
