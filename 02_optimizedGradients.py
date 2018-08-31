@@ -48,8 +48,6 @@ ops.append(("gradient descent optimizer",
 ops.append(("adelta optimizer",
             tf.train.AdadeltaOptimizer(learning_rate=learning_rate).minimize(mse)))
 ops.append(("adagrad optimizer",
-            tf.train.AdadeltaOptimizer(learning_rate=learning_rate).minimize(mse)))
-ops.append(("adagrad optimizer",
             tf.train.AdagradOptimizer(learning_rate=learning_rate).minimize(mse)))
 ops.append(("adagrad dual averaging optimizer",
             tf.train.AdagradDAOptimizer(learning_rate=learning_rate,
