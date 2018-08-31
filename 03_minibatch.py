@@ -8,8 +8,8 @@ from datetime import datetime
 import os
 
 
-def run_session(label, op, initializer, checkpoints_directory, check_points_file, epochs, batches, batchsize,
-                mse_sum, theta2):
+def run_session(label, op, initializer, checkpoints_directory, check_points_file, epochs, batches, b_size,
+                mse_sum, angle):
     with tf.Session() as sess:
         sess.run(initializer)
         print("############- ", label, " -#########")
@@ -17,14 +17,14 @@ def run_session(label, op, initializer, checkpoints_directory, check_points_file
             saver.restore(sess, os.path.join(checkpoints_directory, check_points_file))
         for epoch in range(epochs):
             for batch_index in range(batches):
-                X_batch, y_batch = fetch_batch(batch_index, batchsize)
+                X_batch, y_batch = fetch_batch(batch_index, b_size)
                 if batch_index % 10 == 0:
                     summary_str = mse_sum.eval(feed_dict={X: X_batch, y: y_batch})
                     step = epoch * batches + batch_index
                     file_writer.add_summary(summary_str, step)
                 sess.run(op, feed_dict={X: X_batch, y: y_batch})
 
-        best_theta = theta2.eval()
+        best_theta = angle.eval()
         print("best theta\n", best_theta)
         if not os.path.isdir(checkpoints_directory):
             os.makedirs(checkpoints_directory)
@@ -71,8 +71,6 @@ with tf.name_scope('loss') as scope:
     error = y_prediction - y
     mse = tf.reduce_mean(tf.square(error), name='mse')
 
-# optimizer = tf.train.GradientDescentOptimizer(learning_rate=eta)
-
 ops = list()
 
 # optimizers: https://www.tensorflow.org/api_guides/python/train#optimizers
@@ -103,7 +101,6 @@ ops.append(("RMSProp algorithm optimizer",
             tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(mse)))
 
 
-# training_op = optimizer.minimize(mse)
 init = tf.global_variables_initializer()
 
 saver = tf.train.Saver()
